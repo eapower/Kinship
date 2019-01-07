@@ -137,10 +137,16 @@ net_calc <- function(graph){
 supA1centcalc <- cent_calc(snSupA1)
 supT1centcalc <- cent_calc(snSupT1)
 
-## Supplementary Table S3
+
+## Supplementary Table S4
 netsummary <- as.data.frame(rbind(net_calc(snSupA1),net_calc(snSupT1)))
 colnames(netsummary) <- c("Nodes","Edges","Nominations","Mean Degree","Mean Strength","Density","Reciprocity","Transitivity","Average Path Length","Diameter","Count Out-Degree 0","Count In-Degree 0")
 
+## Mean number of alters named by each survey respondent
+mean(degree(snFull1,mode="out")[degree(snFull1,mode="out")>0])
+
+## Proportion of nominations within each village
+(sum(E(snSupA1)$SupSum) + sum(E(snSupT1)$SupSum))/sum(E(snFull1)$SupSum)
 
 
 ########################

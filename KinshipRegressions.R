@@ -7,6 +7,7 @@ source("./KinshipDataMerge.R")
 library(dplyr)
 library(tidyr)
 library(readr)
+library(xtable)
 
 alltypes=list(Fa=Fa,M=M,fB=fB,hB=hB,fZ=fZ,hZ=hZ,D=D,DD=DD,DS=DS,DSp=DSp,DSpF=DSpF,DSpM=DSpM,
               S=S,SD=SD,SS=SS,SSp=SSp,SSpF=SSpF,SSpM=SSpM,
@@ -352,19 +353,41 @@ grid.arrange(p3,p11,p5,p4,p12,p6, nrow=2)
 dev.off()
 
 
-#histograms of kin availability
+#histograms of kin availability: (generated here then rearranged and coloured in illustrator)
 vills$GN<-paste(vills$Gender,vills$Natal)
 
-snrel<-gather(vills[,c("Gender", "CurrentUr_2017", "closerelres_SN", "matrires_SN", "patrires_SN", "relres_SN", "allaffres_SN", "Natal", "GN")], Type, Count, -Natal, -CurrentUr_2017,-Gender,-GN)
-actrel<-gather(vills[,c("Gender", "CurrentUr_2017", "closerelact", "matriact", "patriact", "relact", "allaffact", "Natal", "GN")], Type, Count, -Natal, -CurrentUr_2017,-Gender,-GN)
+snrel<-gather(vills[,c("Gender", "CurrentUr_2017", "relres_SN", "allaffres_SN", "matrires_SN", "patrires_SN", "Natal", "GN")], Type, Count, -Natal, -CurrentUr_2017,-Gender,-GN)
+actrel<-gather(vills[,c("Gender", "CurrentUr_2017",  "relact", "allaffact", "matriact", "patriact","Natal", "GN")], Type, Count, -Natal, -CurrentUr_2017,-Gender,-GN)
 
-pdf("res_histograms.pdf")
-ggplot(snrel,aes(x=Count,fill=GN))+geom_histogram(position="stack",bins=50,binwidth=0.5) + facet_wrap(~Type+CurrentUr_2017,nrow=5)+theme_minimal()+scale_fill_manual(values=c("#e78ac3","#e7298a","#66c2a5","#1b9e77"))
+pdf("rel_histograms.pdf")
+ggplot(snrel,aes(x=Count,fill=GN))+geom_histogram(position="stack",bins=50,binwidth=0.5) + facet_wrap(~Type+CurrentUr_2017,nrow=4)+theme_minimal()+scale_fill_manual(values=c("#e78ac3","#e7298a","#66c2a5","#1b9e77"))+ylim(0,375)
 dev.off()
 
 pdf("sup_histograms.pdf")
-ggplot(actrel,aes(x=Count,fill=GN))+geom_histogram(position="stack",bins=20,binwidth=0.5) + facet_wrap(~Type+CurrentUr_2017,nrow=5)+theme_minimal()+scale_fill_manual(values=c("#e78ac3","#e7298a","#66c2a5","#1b9e77"))
+ggplot(actrel,aes(x=Count,fill=GN))+geom_histogram(position="stack",bins=20,binwidth=0.5) + facet_wrap(~Type+CurrentUr_2017,nrow=5)+theme_minimal()+scale_fill_manual(values=c("#e78ac3","#e7298a","#66c2a5","#1b9e77"))+ylim(0,375)
 dev.off()
+
+## For inclusion with Figure 2 (here labeled rel_histograms and sup_histograms)
+TenSN$GN <- paste(TenSN$Gender,TenSN$Natal)
+AlaSN$GN <- paste(AlaSN$Gender,AlaSN$Natal)
+
+TenSN1 <- as.data.frame(TenSN)
+AlaSN1 <- as.data.frame(AlaSN)
+
+outputtab1 <- data.frame()
+for (i in c(132, 131, 138, 137, 128, 127, 130, 129)) {
+  temp <- TenSN1[,i]
+  temp2 <- AlaSN1[,i]
+  #print(temp)
+  tempdat <- cbind(summary(temp2)[4],
+                   table(temp2)[1]/length(temp2)*100,
+                   summary(temp)[4],
+                   table(temp)[1]/length(temp)*100
+  )
+  outputtab1 <- rbind.data.frame(outputtab1, tempdat)
+}
+rownames(outputtab1)<-c("Res Relatives","Named Relatives","Res Aff Rel","Named Aff Rel","Res Matri Rel","Named Matri Rel","Res Patri Rel","Named Patri Rel")
+xtable(outputtab1,digits=c(1,2,0,2,0))
 
 #odds-ratios with CI for regression results
 models <- list(famresT, famresA, matriresT,matriresA,patriresT,patriresA,affresT,affresA,odegT, odegA, conTBN,conABN,matriTBN,matriABN,patriTBN,patriABN,spfamTBN, spfamABN)
@@ -382,6 +405,120 @@ dat$TA<-rep(c("T","A"),9)
 pdf("RegressionORs.pdf")
 ggplot(dat,aes(y=pe,x=model,colour=TA)) + geom_hline(yintercept=1,color="black") + geom_pointrange(aes(ymin = lb, ymax = ub,colour=TA), position = position_dodge2(width = 0.9,preserve="single"),show.legend=TRUE,shape=18,size=0.6) + theme_bw() + coord_flip() + labs(y="Odds Ratio",x="",title="Regressions")+ scale_y_continuous(limits=c(0,10),breaks=seq(0,10,by=2)) + scale_colour_manual(values=c("#1f78b4", "#ff7f00"))
 dev.off()
+
+
+
+## Code for generating table S3
+
+outputtab <- data.frame()
+for (i in c(141, 132, 131, 138, 137, 128, 127, 130, 129)) {
+  temp <- TenSN1[,i]
+  temp2 <- AlaSN1[,i]
+  tempdat <- cbind(summary(temp2[AlaSN1$GN=="Female Natal"])[4],
+                   length(temp2[AlaSN1$GN=="Female Natal" & temp2==0])/length(temp2[AlaSN1$GN=="Female Natal"])*100,
+                   summary(temp2[AlaSN1$GN=="Female Non-Natal"])[4],
+                   length(temp2[AlaSN1$GN=="Female Non-Natal" & temp2==0])[1]/length(temp2[AlaSN1$GN=="Female Non-Natal"])*100,
+                   summary(temp2[AlaSN1$GN=="Male Natal"])[4],
+                   length(temp2[AlaSN1$GN=="Male Natal" & temp2==0])/length(temp2[AlaSN1$GN=="Male Natal"])*100,
+                   summary(temp2[AlaSN1$GN=="Male Non-Natal"])[4],
+                   length(temp2[AlaSN1$GN=="Male Non-Natal" & temp2==0])/length(temp2[AlaSN1$GN=="Male Non-Natal"])*100,
+                   summary(temp[TenSN1$GN=="Female Natal"])[4],
+                   length(temp[TenSN1$GN=="Female Natal" & temp==0])/length(temp[TenSN1$GN=="Female Natal"])*100,
+                   summary(temp[TenSN1$GN=="Female Non-Natal"])[4],
+                   length(temp[TenSN1$GN=="Female Non-Natal" & temp==0])/length(temp[TenSN1$GN=="Female Non-Natal"])*100,
+                   summary(temp[TenSN1$GN=="Male Natal"])[4],
+                   length(temp[TenSN1$GN=="Male Natal" & temp==0])/length(temp[TenSN1$GN=="Male Natal"])*100,
+                   summary(temp[TenSN1$GN=="Male Non-Natal"])[4],
+                   length(temp[TenSN1$GN=="Male Non-Natal" & temp==0])/length(temp[TenSN1$GN=="Male Non-Natal"])*100
+  )
+  outputtab <- rbind.data.frame(outputtab, tempdat)
+}
+rownames(outputtab)<-c("Support","Res Consan","Named Consan","Res Aff","Named Aff","Res Matri","Named Matri","Res Patri","Named Patri")
+xtable(outputtab,digits=c(1,rep(c(2,0),8)))
+
+
+## code used to generate Supplementary Table S5
+require(igraph)
+
+A_Loan<-delete.edges(snSupA1,E(snSupA1)[E(snSupA1)$LoanAsk==0])
+A_Borrow<-delete.edges(snSupA1,E(snSupA1)[E(snSupA1)$BorrowAsk==0])
+A_Behav<-delete.edges(snSupA1,E(snSupA1)[E(snSupA1)$BehavHelp==0])
+A_Info<-delete.edges(snSupA1,E(snSupA1)[E(snSupA1)$Information==0])
+A_ImpIss<-delete.edges(snSupA1,E(snSupA1)[E(snSupA1)$ImpIss==0])
+A_Work<-delete.edges(snSupA1,E(snSupA1)[E(snSupA1)$Work==0])
+
+T_Loan<-delete.edges(snSupT1,E(snSupT1)[E(snSupT1)$LoanAsk==0])
+T_Borrow<-delete.edges(snSupT1,E(snSupT1)[E(snSupT1)$BorrowAsk==0])
+T_Behav<-delete.edges(snSupT1,E(snSupT1)[E(snSupT1)$BehavHelp==0])
+T_Info<-delete.edges(snSupT1,E(snSupT1)[E(snSupT1)$Information==0])
+T_ImpIss<-delete.edges(snSupT1,E(snSupT1)[E(snSupT1)$ImpIss==0])
+T_Work<-delete.edges(snSupT1,E(snSupT1)[E(snSupT1)$Work==0])
+
+AffAwsp <- pmax(AffA,Aff1A)
+AffTwsp <- pmax(AffT,Aff1T)
+
+alaka <- data.frame()
+adeg <- data.frame("IndivID"=V(snSupA1)$name,"Natal"=V(snSupA1)$natal,"Gender"=V(snSupA1)$Gender,"EverMarried"=V(snSupA1)$evermarried)
+for (i in list(snSupA1,A_Loan, A_Borrow, A_Behav, A_Info, A_ImpIss, A_Work)){
+  tempnet <- asNetwork(i)
+  tempdat <- cbind(
+    sum(table(Alakinmattrunc*as.matrix(get.adjacency(i)))[-1])/table(as.matrix(get.adjacency(i)))[2],
+    sum(table(AffAwsp*as.matrix(get.adjacency(i)))[-1])/table(as.matrix(get.adjacency(i)))[2],
+    sum(table(Mat_matriA*as.matrix(get.adjacency(i)))[-1])/table(as.matrix(get.adjacency(i)))[2],
+    sum(table(Mat_patriA*as.matrix(get.adjacency(i)))[-1])/table(as.matrix(get.adjacency(i)))[2],
+    sum(table(Alakinmattrunc*as.matrix(get.adjacency(i)))[-1])/sum(table(Alakinmattrunc)[-1]),
+    sum(table(AffAwsp*as.matrix(get.adjacency(i)))[-1])/sum(table(AffAwsp)[-1]),
+    sum(table(Mat_matriA*as.matrix(get.adjacency(i)))[-1])/sum(table(Mat_matriA)[-1]),
+    sum(table(Mat_patriA*as.matrix(get.adjacency(i)))[-1])/sum(table(Mat_patriA)[-1])
+  )
+  alaka <- rbind.data.frame(alaka,tempdat)
+  deg <-degree(i,mode="out")
+  adeg <- cbind(adeg,deg)
+}
+
+rownames(alaka) <- c("Overall","Loan","Borrow","Behav","Info","ImpIss","Work")
+colnames(alaka) <- c("Consan_ofSup","Aff_ofSup","Matri_ofSup","Patri_ofSup","Consan_ofKin","Aff_ofKin","Matri_ofKin","Patri_ofKin")
+
+colnames(adeg) <- c("IndivID","Natal","Gender","EverMarried","Overall","Loan","Borrow","Behav","Info","ImpIss","Work")
+adeg$SupSum <- rowSums(adeg[,6:11])
+
+asums <- aggregate(adeg[,6:12],list(Natal=adeg$Natal),sum)
+
+
+tenpatti <- data.frame()
+tdeg <- data.frame("IndivID"=V(snSupT1)$name,"Natal"=V(snSupT1)$natal,"Gender"=V(snSupT1)$Gender,"EverMarried"=V(snSupT1)$evermarried)
+for (i in list(snSupT1,T_Loan, T_Borrow, T_Behav, T_Info, T_ImpIss, T_Work)){
+  tempnet <- asNetwork(i)
+  tempdat <- cbind(
+    sum(table(Tenkinmattrunc*as.matrix(get.adjacency(i)))[-1])/table(as.matrix(get.adjacency(i)))[2],
+    sum(table(AffTwsp*as.matrix(get.adjacency(i)))[-1])/table(as.matrix(get.adjacency(i)))[2],
+    sum(table(Mat_matriT*as.matrix(get.adjacency(i)))[-1])/table(as.matrix(get.adjacency(i)))[2],
+    sum(table(Mat_patriT*as.matrix(get.adjacency(i)))[-1])/table(as.matrix(get.adjacency(i)))[2],
+    sum(table(Tenkinmattrunc*as.matrix(get.adjacency(i)))[-1])/sum(table(Tenkinmattrunc)[-1]),
+    sum(table(AffTwsp*as.matrix(get.adjacency(i)))[-1])/sum(table(AffTwsp)[-1]),
+    sum(table(Mat_matriT*as.matrix(get.adjacency(i)))[-1])/sum(table(Mat_matriT)[-1]),
+    sum(table(Mat_patriT*as.matrix(get.adjacency(i)))[-1])/sum(table(Mat_patriT)[-1])
+  )
+  tenpatti <- rbind.data.frame(tenpatti,tempdat)
+  deg <-degree(i,mode="out")
+  tdeg <- cbind(tdeg,deg)
+}
+
+rownames(tenpatti) <- c("Overall","Loan","Borrow","Behav","Info","ImpIss","Work")
+colnames(tenpatti) <- c("Consan_ofSup","Aff_ofSup","Matri_ofSup","Patri_ofSup","Consan_ofKin","Aff_ofKin","Matri_ofKin","Patri_ofKin")
+
+colnames(tdeg) <- c("IndivID","Natal","Gender","EverMarried","Overall","Loan","Borrow","Behav","Info","ImpIss","Work")
+tdeg$SupSum <- rowSums(tdeg[,6:11])
+
+tsums <- aggregate(tdeg[,6:12],list(Natal=tdeg$Natal),sum)
+
+xtable(rbind(asums/asums$SupSum*100,tsums/tsums$SupSum*100),digits=2)
+
+## Supplementary Table S5
+both <- rbind(alaka, tenpatti)
+xtable(both,digits=2)
+
+
 
 
 ## Purely subjective observation: the percent of possible kinship ties activated roughly aligns with relatedness (with, for affines should be half of the `fictive' relatedness we use, following Hughes, so Affines 1.0 have a 0.5 shared stake in future generations)
@@ -402,3 +539,5 @@ table(Aff1T,Aff1T*Mat_snSupT1)/rowSums(table(Aff1T,Aff1T*Mat_snSupT1))
 table(Aff5T,Aff5T*Mat_snSupT1)/rowSums(table(Aff5T,Aff5T*Mat_snSupT1))
 table(Aff25T,Aff25T*Mat_snSupT1)/rowSums(table(Aff25T,Aff25T*Mat_snSupT1))
 table(Aff125T,Aff125T*Mat_snSupT1)/rowSums(table(Aff125T,Aff125T*Mat_snSupT1))
+
+
